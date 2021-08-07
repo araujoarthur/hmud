@@ -3,7 +3,9 @@ function(context, args)
 	var caller = context.caller;
 	var l = #fs.scripts.lib();
 	var db = #fs.socialmud.dbutils();
-	var pages = ["com", "feed", "credits", "blog", "documentation", "post", "profile", "search", "register", "login", "logout"];
+	var pages = ["com", "feed", "credits", "blog", "documentation", "post", "profile", "search", "register", "login", "logout"];//Use on DBUTILS after admin is ready
+	var restrictedPages = ["com","register","login","logout"];//Use on DBUTILS after admin is ready
+	var restrictedUsernames = ["register", "admin", "moderator", "public", "private", "shared", "friends", "feed","verified","main","profile"];//Use on DBUTILS after admin is ready
 
 	function isLoggedIn(user){
 		if(db.getCallerAuthUser(user) != null){
@@ -31,12 +33,15 @@ function(context, args)
 		}
 	}
 
+
+
 	if(a && a.cli){
 		return false
 	}
 	else{
 		return {
 			pages,
+			restrictedUsernames,
 			isLoggedIn,
 			callPage
 		}

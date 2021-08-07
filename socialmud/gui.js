@@ -97,7 +97,7 @@ function(context, args)
 				"`A  ║"+" ".repeat(wid)+"║`\n",
 				"`A  ║"+" ".repeat(wid)+"║`\n",
 				"`A  ║``C  Hello! You can login by using your ``Nusername``C and``N password` `A                                                  ║`\n",
-				"`A  ║``C  If you aren't registered yet, you can include register:true and your ``Nusername``C and``N password` `A                ║`\n",
+				"`A  ║``C  If you aren't registered yet, go to socialmud.register and choose your ``Nusername``C and``N password` `A              ║`\n",
 				"`A  ║"+" ".repeat(wid)+"║`\n",
 				"`A  ║"+" ".repeat(wid)+"║`\n",
 				"`A  ║"+" ".repeat(wid)+"║`\n",
@@ -114,6 +114,23 @@ function(context, args)
 				"`A  ║"+" ".repeat(wid)+"║`\n",
 				"`A  ║"+" ".repeat(wid)+"║`\n",
 				"`A  ║``D  ERROR!` `A                                                                                                    ║`\n",
+				"`A  ║`  "+message.padEnd(wid-2+relativeSum)+"`A║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ╚"+"═".repeat(wid)+"╝`\n"
+		]
+
+		return l.join("");
+	}
+
+	function drawSuccessMessage(message,relativeSum){
+		let l=[
+				"`A  ╔"+"═".repeat(wid)+"╗`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║``L  SUCCESS!` `A                                                                                                  ║`\n",
 				"`A  ║`  "+message.padEnd(wid-2+relativeSum)+"`A║`\n",
 				"`A  ║"+" ".repeat(wid)+"║`\n",
 				"`A  ║"+" ".repeat(wid)+"║`\n",
@@ -326,6 +343,9 @@ function(context, args)
 		}
 		if(request == "em"){
 			res.push(drawErrorMessage(a.emMessage, a.emRelSum));
+		}
+		if(request == "sm"){
+			res.push(drawSuccessMessage(a.smMessage, a.smRelSum));
 		}
 	}
 

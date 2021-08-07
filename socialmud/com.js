@@ -6,18 +6,25 @@ function(c, a)
 	var db = #fs.socialmud.dbutils();
 	var account;
 
+	var gui = a => #fs.socialmud.gui(a)
+
 	if(!sys.isLoggedIn(caller)){
 		return sys.callPage("login");
 	}else{
-		if(a.sysAccount){
+		if(a && a.sysAccount){
 			account = a.sysAccount;
 		}else{
 			account = db.getAccount(db.getCallerAuthUser(caller).split("_")[1]);
 			let page = db.getLastPage(account.username);
 		}
 
-		if (a.page && sys.pages.includes(a.page)) {
-			sys.callPage(a.page)
+		db.setLastActive(account.username, Date.now());
+
+		if (a && a.page && sys.pages.includes(a.page)) {
+			if(!sys.restrictedPages.includes(a.page)){
+				db.setLastPage(account.username, page);
+			}
+			return sys.callPage(a.page)
 		} else if (account.lastPage != ""){
 			return sys.callPage(account.lastpage);
 		}else{

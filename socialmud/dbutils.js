@@ -328,7 +328,7 @@ function(c, a)
 	}
 
 	function getVisiblePosts(u,friends,n){//Gets posts from user and friend
-		let posts = #db.f({type:"post", author:{$in:[u,...friends]}}).sort({date:-1}).limit(n).array();
+		let posts = #db.f({type:"post", author:{$in:[ac+u,...friends]}}).sort({date:-1}).limit(n).array();
 		if(posts){
 			return posts;
 		}else{

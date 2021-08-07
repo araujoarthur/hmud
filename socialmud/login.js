@@ -11,6 +11,7 @@ function(context, args)
 
 	if(sys.isLoggedIn(caller)){
 		account = db.getAccount(db.getCallerAuthUser(caller).split("_")[1]);
+		db.setLastActive(account.username, Date.now());
 		let page = db.getLastPage(account.username);
 		return sys.callPage(page, {sysAccount:account});
 	}else if(!args){
@@ -20,7 +21,9 @@ function(context, args)
 	}else if(args.username && args.password){
 		let loginAttempt = db.login(args.username, args.password,caller);
 		if (loginAttempt.ok == true){
+			db.setLastActive(loginAttempt.account.username, Date.now());
 			let page = loginAttempt.account.lastpage != "" ? loginAttempt.account.lastpage : "feed";
+			db.setLastPage(loginAttempt.account.username, page);
 			return sys.callPage(page, {sysAccount:loginAttempt.account});
 		}else{
 			return gui({request:["h","em"], emMessage:"`A"+loginAttempt.msg+"`", emRelSum:3});
