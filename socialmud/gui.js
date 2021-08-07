@@ -2,6 +2,8 @@ function(context, args)
 {
 	var caller = context.caller;
 	var l = #fs.scripts.lib();
+	var db = #fs.socialmud.dbutils();
+
 	var wid = 109;
 
 	function padNum(n,w=2){
@@ -66,7 +68,7 @@ function(context, args)
 	function drawPosts(posts){
 		let l = ["`A  ╔"+"═".repeat(wid)+"╗`\n"];
 		for(let post of posts){
-			let author = #fs.socialmud.dbutils({func:"getaccount", u:post.author.split("_")[1]});
+			let author = db.getAccount(post.author.split("_")[1]);
 			post.author = post.author.split("_")[1];
 			post.author = author.verified ? "`R "+ post.author + "``J [⌽]`" : "`R"+post.author+"`";
 			let relativeSum =  author.verified ? 2 : - 1
@@ -105,6 +107,23 @@ function(context, args)
 		return l.join("");
 	}
 
+	function drawErrorMessage(message,relativeSum){
+		let l=[
+				"`A  ╔"+"═".repeat(wid)+"╗`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║``D  ERROR!` `A                                                                                                    ║`\n",
+				"`A  ║`  "+message.padEnd(wid-2+relativeSum)+"`A║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ║"+" ".repeat(wid)+"║`\n",
+				"`A  ╚"+"═".repeat(wid)+"╝`\n"
+		]
+
+		return l.join("");
+	}
+
 	function drawHeaderPage(page){
 
 		let l = [
@@ -120,11 +139,11 @@ function(context, args)
 	function drawProfile(account){
 		let widProfileLeft = 61;
 		let widProfileRight = 46;
-		let postCount = #fs.socialmud.dbutils({func:"getuserpostcount", u:account.username});
-		let registerDate = #fs.socialmud.dbutils({func:"getregisterdate", u:account.username});
-		let friendCount = #fs.socialmud.dbutils({func:"getfriendcount", u:account.username});
+		let postCount = db.getUserPostCount(account.username);
+		let registerDate = db.getRegisterDate(account.username);
+		let friendCount = db.getFriendCount(account.username);
 		let relativeSum  = account.verified ? -7:-10
-		let postsReceived = #fs.socialmud.dbutils({func:"getfeedpostcount", feed:account.username, u:account.username});
+		let postsReceived = db.getFeedPostCount(account.username, account.username);
 		account.username =  account.verified ? "`O" + account.username + "` `H[⌽]`" : "`O" + account.username + "`";
 		let formatedDate = formatDate(account.lastactive);
 		let formatSince = formatDate(account.registerdate);
@@ -179,7 +198,7 @@ function(context, args)
 
 	function drawSentRequests(user){
 
-		let  requestsJS = #fs.socialmud.dbutils({func:"getsentrequests", u:user});
+		let  requestsJS = db.getSentRequests(user);
 		let requests = [];
 
 		for(let requestOBJ of requestsJS){
@@ -216,7 +235,7 @@ function(context, args)
 	}
 
 	function drawReceivedRequests(user){
-		let  requestsJS = #fs.socialmud.dbutils({func:"getreceivedrequests", u:user});
+		let  requestsJS = db.getReceivedRequests(user);
 		let requests = [];
 
 		for(let requestOBJ of requestsJS){
@@ -304,6 +323,9 @@ function(context, args)
 		}
 		if(request == "s"){
 			res.push(drawSearch(a.sResults));
+		}
+		if(request == "em"){
+			res.push(drawErrorMessage(a.emMessage, a.emRelSum));
 		}
 	}
 

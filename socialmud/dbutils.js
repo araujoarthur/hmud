@@ -96,7 +96,7 @@ function(c, a)
 				return {ok:false, msg:"Wrong Password!"};
 			}
 		}else{
-			return {ok:false, msg:"Wrong username!"};
+			return {ok:false, msg:"Wrong Username!"};
 		}
 	}
 
@@ -353,7 +353,7 @@ function(c, a)
 	/* Navigation */
 
 	function getLastPage(u){
-		return #db.f({type:"account", _id:ac+u},{lastpage:true}).lastpage;
+		return #db.f({type:"account", _id:ac+u},{lastpage:true}).first();
 	}
 
 	function setLastPage(u,p){
@@ -362,46 +362,95 @@ function(c, a)
 
 	/*Flow*/
 
-	switch(a.func.toLowerCase()){
-		case "view": return #db.f({_id:{$exists:true}}).array();
-		case "reset": return #db.r({_id:{$exists:true}});
-		case "checkregister": return checkRegister(a.u);
-		case "removerequest": return removeRequest(a.u);
-		case "removefriendship": return removeFriendship(a.f,a.r);
-		case "registeruser": return registerUser(a.u,a.p);
-		case "sendrequest": return sendRequest(a.f,a.r);
-		case "createfriendship": return createFriendship(a.f, a.r);
-		case "getfriendcount": return getFriendCount(a.u);
-		case "getreceivedrequests": return getReceivedRequests(a.u);
-		case "getsentrequests": return getSentRequests(a.u);
-		case "getreceivedrequestscount": return getReceivedRequestsCount(a.u);
-		case "getsentrequestscount": return getSentRequestsCount(a.u);
-		case "getfriendlist": return getFriendList(a.u);
-		case "setauthcaller": return setAuthCaller(a.u, a.c);
-		case "getcallerauthuser": return getCallerAuthUser(a.c);
-		case "getuserauthcaller": return getUserAuthCaller(a.u);
-		case "login": return login(a.u,a.p,a.c);
-		case "logout": return logout(a.u,a.c);
-		case "setdescription": return setDescription(a.u, a.d);
-		case "setlastactive": return setLastActive(a.u);
-		case "createpost": return createPost(a.u, a.l, a.t,a.p);
-		case "getpostsfromuser": return getPostsFromUser(a.u,a.n);
-		case "getuserpostcount": return getUserPostCount(a.u);
-		case "getpostsfromfriends": return getPostsFromFriends(a.u,a.n);
-		case "removepost": return removePost(a.pid);
-		case "postagree": return postAgree(a.pid, a.u);
-		case "postdisagree": return postDisagree(a.pid, a.u);
-		case "getpostagrees": return getPostAgrees(a.pid);
-		case "getpostdisagrees": return getPostDisagrees(a.pid);
-		case "getpostdisagreescount": return getPostDisagreesCount(a.pid);
-		case "getpostagreescount": return getPostAgreesCount(a.pid);
-		case "setdefaultprivacy": return setDefaultPrivacy(a.u,a.p);
-		case "setpostprivacy": return setPostPrivacy(a.u, a.pid, a.p)
-		case "getlastpage": return getLastPage(a.u);
-		case "setlatpage": return setLastPage(a.u,a.p);
-		case "getaccount": return getAccount(a.u);
-		case "getfeedpostcount": return getFeedPostCount(a.feed, a.u);
-		case "getregisterdate": return getRegisterDate(a.u);
-		case "searchuser": return searchUser(a.w);
+	if(!a || !a.cli){
+		return {view:a => #db.f({}).array(),
+		reset:a => #db.r({}),
+		checkRegister:checkRegister,
+		removeRequest:removeRequest,
+		removeFriendship:removeFriendship,
+		registerUser:registerUser,
+		sendRequest:sendRequest,
+		createFriendship:createFriendship,
+		getFriendCount:getFriendCount,
+		getReceivedRequests:getReceivedRequests,
+		getReceivedRequestsCount:getReceivedRequestsCount,
+		getSentRequestsCount:getSentRequestsCount,
+		getSentRequests:getSentRequests,
+		getFriendList:getFriendList,
+		setAuthCaller:setAuthCaller,
+		getCallerAuthUser:getCallerAuthUser,
+		getUserAuthCaller:getUserAuthCaller,
+		login:login,
+		logout:logout,
+		setDescription:setDescription,
+		setLastActive:setLastActive,
+		createPost:createPost,
+		getPostsFromUser:getPostsFromUser,
+		getUserPostCount:getUserPostCount,
+		getPostsFromFriends:getPostsFromFriends,
+		removePost:removePost,
+		postAgree:postAgree,
+		postDisagree:postDisagree,
+		getPostAgrees:getPostAgrees,
+		getPostDisagrees:getPostDisagrees,
+		getPostAgreesCount:getPostAgreesCount,
+		getPostDisagreesCount:getPostDisagreesCount,
+		setDefaultPrivacy:setDefaultPrivacy,
+		setPostPrivacy:setPostPrivacy,
+		getVisiblePosts:getVisiblePosts,
+		getPostsOnFeed:getPostsOnFeed,
+		getLastPage:getLastPage,
+		setLastPage:setLastPage,
+		getAccount:getAccount,
+		getFeedPostCount:getFeedPostCount,
+		getRegisterDate:getRegisterDate,
+		searchUser:searchUser}
+	}else{
+		switch(a.func.toLowerCase()){
+			case "view": return #db.f({}).array();
+			case "reset": return #db.r({});
+			case "checkregister": return checkRegister(a.u);
+			case "removerequest": return removeRequest(a.u);
+			case "removefriendship": return removeFriendship(a.f,a.r);
+			case "registeruser": return registerUser(a.u,a.p);
+			case "sendrequest": return sendRequest(a.f,a.r);
+			case "createfriendship": return createFriendship(a.f, a.r);
+			case "getfriendcount": return getFriendCount(a.u);
+			case "getreceivedrequests": return getReceivedRequests(a.u);
+			case "getsentrequests": return getSentRequests(a.u);
+			case "getreceivedrequestscount": return getReceivedRequestsCount(a.u);
+			case "getsentrequestscount": return getSentRequestsCount(a.u);
+			case "getfriendlist": return getFriendList(a.u);
+			case "setauthcaller": return setAuthCaller(a.u, a.c);
+			case "getcallerauthuser": return getCallerAuthUser(a.c);
+			case "getuserauthcaller": return getUserAuthCaller(a.u);
+			case "login": return login(a.u,a.p,a.c);
+			case "logout": return logout(a.u,a.c);
+			case "setdescription": return setDescription(a.u, a.d);
+			case "setlastactive": return setLastActive(a.u);
+			case "createpost": return createPost(a.u, a.l, a.t,a.p);
+			case "getpostsfromuser": return getPostsFromUser(a.u,a.n);
+			case "getuserpostcount": return getUserPostCount(a.u);
+			case "getpostsfromfriends": return getPostsFromFriends(a.u,a.n);
+			case "removepost": return removePost(a.pid);
+			case "postagree": return postAgree(a.pid, a.u);
+			case "postdisagree": return postDisagree(a.pid, a.u);
+			case "getpostagrees": return getPostAgrees(a.pid);
+			case "getpostdisagrees": return getPostDisagrees(a.pid);
+			case "getpostdisagreescount": return getPostDisagreesCount(a.pid);
+			case "getpostagreescount": return getPostAgreesCount(a.pid);
+			case "setdefaultprivacy": return setDefaultPrivacy(a.u,a.p);
+			case "setpostprivacy": return setPostPrivacy(a.u, a.pid, a.p)
+			case "getlastpage": return getLastPage(a.u);
+			case "setlastpage": return setLastPage(a.u,a.p);
+			case "getaccount": return getAccount(a.u);
+			case "getfeedpostcount": return getFeedPostCount(a.feed, a.u);
+			case "getregisterdate": return getRegisterDate(a.u);
+			case "searchuser": return searchUser(a.w);
+		}
 	}
+
+
+
+
 }
