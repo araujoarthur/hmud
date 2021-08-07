@@ -31,10 +31,24 @@ function(c, a)
 				nU.lastactive =  Date.now();
 				nU.friends = [];
 				nU.description = "";
+				nU.defaultprivacy = "public";
+				nU.lastpage = "";
+				nU.registerdate = Date.now();
 				#db.i(nU);
 				return true;
 			}
 		}
+	}
+
+	function searchUser(word){
+		let results = #db.f({type:"account", username:{$regex:word}},{username:true, lastactive:true}).array();
+		let retRes = [];
+		if (results){
+			for(let result of results){
+				retRes.push([result.username,result.lastactive]);
+			}
+		}
+		return retRes;
 	}
 
 	function setAuthCaller(u,c){
@@ -60,15 +74,24 @@ function(c, a)
 		}
 	}
 
+	function getAccount(u){
+		let account = #db.f({type:"account", _id:ac+u}).first();
+		if(account){
+			return account;
+		}else{
+			return null;
+		}
+	}
+
 	function login(u,p,c){
 		if(getCallerAuthUser(c)){
-			return {ok:true, msg:"Caller already logged in as: "+getCallerAuthUser(c).split('_')[1]}
+			return {ok:true, msg:"Caller already logged in as: "+getCallerAuthUser(c).split('_')[1], account:getAccount(u)}
 		}
 		let account = #db.f({type:"account", username:u}).first();
 		if(account){
 			if(account.password.toLowerCase() == p.toLowerCase()){
 				setAuthCaller(u,c);
-				return {ok:true, msg:"Login Authorized!"};
+				return {ok:true, msg:"Login Authorized!", account:getAccount(u)};
 			}else{
 				return {ok:false, msg:"Wrong Password!"};
 			}
@@ -88,19 +111,29 @@ function(c, a)
 
 	function setPassword(u,p){
 		#db.u({type:"account", _id:ac+u},{$set:{password:p}})
+		return true;
+	}
+
+	function setDefaultPrivacy(u,p){
+		#db.u({type:"account", _id:ac+u},{$set:{defaultprivacy:p}});
+		return true;
 	}
 
 	/* Profile */
 
 	function setDescription(u,d){
-		#db.u({type:"account", _id:ac+u},{$set:{description:d}})
-	}
-
-	function setLastActive(u){
-		#db.u({type:"account", _id:ac+u},{$set:{lastactive:Date.now()}})
+		#db.u({type:"account", _id:ac+u},{$set:{description:d}});
 		return true;
 	}
 
+	function setLastActive(u){
+		#db.u({type:"account", _id:ac+u},{$set:{lastactive:Date.now()}});
+		return true;
+	}
+
+	function getRegisterDate(u){
+		return #db.f({type:"account", _id:ac+u}, {registerdate:true}).first().registerdate;
+	}
 
 	/* Friendship */
 
@@ -185,6 +218,148 @@ function(c, a)
 		return #db.f({type:"account", _id:ac+u},{friends:true}).first().friends;
 	}
 
+	/* Posts */
+	function createPost(u,l,t,p){
+		let post = {}
+		post.type = "post";
+		post.author = ac+u;
+		post.location = l;
+		post.content = t;
+		post.date = Date.now();
+		post.privacy = p;
+		post.agrees = [];
+		post.disagrees = [];
+		#db.i(post);
+		return true;
+	}
+
+	function postAgree(pId,u){
+		let post = #db.f({type:"post", _id:{$oid:pId}}).first();
+		if(post){
+				#db.u({type:"post", _id:{$oid:pId}},{$pull:{disagrees:u},$addToSet:{agrees:u}});
+				return {ok:true, msg:"Agreed!"};
+		}else{
+			return {ok:false, msg:"Wrong ID"}
+		}
+	}
+
+	function setPostPrivacy(u,pId,p){
+		let user = #db.f({type:"account", _id:ac+u}).first();
+		let post = #db.f({type:"post", _id:{$Oid:pId}}).first();
+		if (user._id == post.author){
+			#db.u({type:"post", _id:{$oid:pId}}, {$set:{privacy:p}})
+			return{ok:true, msg:"Privacy Updated!"};
+		}else{
+			return {ok:false, msg:"You're not post author"};
+		}
+
+	}
+
+	function postDisagree(pId,u){
+		let post = #db.f({type:"post", _id:{$oid:pId}}).first();
+		if(post){
+				#db.u({type:"post", _id:{$oid:pId}},{$pull:{agrees:u},$addToSet:{disagrees:u}});
+				return {ok:true, msg:"Disagreed!"};
+		}else{
+			return {ok:false, msg:"Wrong ID"}
+		}
+	}
+
+	function getPostAgrees(pId){
+		let agrees = #db.f({type:"post", _id:{$oid:pId}}).first();
+		if(agrees){
+			return agrees.agrees;
+		}else{
+			return null;
+		}
+	}
+
+	function getPostDisagrees(pId){
+		let disagrees = #db.f({type:"post", _id:{$oid:pId}}).first();
+		if(disagrees){
+			return disagrees.disagrees;
+		}else{
+			return null;
+		}
+	}
+
+	function getPostAgreesCount(pId){
+		let agrees = #db.f({type:"post", _id:{$oid:pId}},{agrees:true}).first();
+		if(agrees){
+			return agrees.agrees.length;
+		}else{
+			return null;
+		}
+	}
+
+	function getPostDisagreesCount(pId){
+		let disagrees = #db.f({type:"post", _id:{$oid:pId}},{disagrees:true}).first();
+		if(disagrees){
+			return disagrees.disagrees.length;
+		}else{
+			return null;
+		}
+	}
+
+	function getPostsFromUser(u,n){//gets posts from user
+		let posts = #db.f({type:"post", author:ac+u}).sort({date:-1}).limit(n).array();
+		if(posts){
+			return posts;
+		}else {
+			return null;
+		}
+	}
+
+	function getUserPostCount(u){//gets post count for user
+		return #db.f({type:"post", author:ac+u}).count();
+	}
+
+	function getFeedPostCount(feed,u){//gets post count for user
+		return #db.f({type:"post", location:u, author:{$ne:ac+u}}).count();
+	}
+
+	function getPostsFromFriends(friends,n){//Gets posts only from friends
+		let posts = #db.f({type:"post", author:{$in:friends}}).sort({date:-1}).limit(n).array();
+		if(posts){
+			return posts;
+		}else{
+			return null;
+		}
+	}
+
+	function getVisiblePosts(u,friends,n){//Gets posts from user and friend
+		let posts = #db.f({type:"post", author:{$in:[u,...friends]}}).sort({date:-1}).limit(n).array();
+		if(posts){
+			return posts;
+		}else{
+			return null;
+		}
+	}
+
+	function getPostsOnFeed(feed,n){//Gets posts on specific feed
+		let posts = #db.f({type:"post", location:feed}).sort({date:-1}).limit(n).array();
+		if(posts){
+			return posts;
+		}else {
+			return null;
+		}
+	}
+
+	function removePost(pId){
+		#db.r({type:"post", _id:{$oid:pId}});
+		return true;
+	}
+
+	/* Navigation */
+
+	function getLastPage(u){
+		return #db.f({type:"account", _id:ac+u},{lastpage:true}).lastpage;
+	}
+
+	function setLastPage(u,p){
+		#db.u({type:"account", _id:ac+u},{$set:{lastpage:p}})
+	}
+
 	/*Flow*/
 
 	switch(a.func.toLowerCase()){
@@ -209,5 +384,24 @@ function(c, a)
 		case "logout": return logout(a.u,a.c);
 		case "setdescription": return setDescription(a.u, a.d);
 		case "setlastactive": return setLastActive(a.u);
+		case "createpost": return createPost(a.u, a.l, a.t,a.p);
+		case "getpostsfromuser": return getPostsFromUser(a.u,a.n);
+		case "getuserpostcount": return getUserPostCount(a.u);
+		case "getpostsfromfriends": return getPostsFromFriends(a.u,a.n);
+		case "removepost": return removePost(a.pid);
+		case "postagree": return postAgree(a.pid, a.u);
+		case "postdisagree": return postDisagree(a.pid, a.u);
+		case "getpostagrees": return getPostAgrees(a.pid);
+		case "getpostdisagrees": return getPostDisagrees(a.pid);
+		case "getpostdisagreescount": return getPostDisagreesCount(a.pid);
+		case "getpostagreescount": return getPostAgreesCount(a.pid);
+		case "setdefaultprivacy": return setDefaultPrivacy(a.u,a.p);
+		case "setpostprivacy": return setPostPrivacy(a.u, a.pid, a.p)
+		case "getlastpage": return getLastPage(a.u);
+		case "setlatpage": return setLastPage(a.u,a.p);
+		case "getaccount": return getAccount(a.u);
+		case "getfeedpostcount": return getFeedPostCount(a.feed, a.u);
+		case "getregisterdate": return getRegisterDate(a.u);
+		case "searchuser": return searchUser(a.w);
 	}
 }
