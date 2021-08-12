@@ -15,10 +15,12 @@
  - **login(u,p,c)** -> Receives username, password and caller, makes the login stuff;
  - **logout(id,c)** -> Receives \_id and caller, sets caller to "" for logging out;
  - **setPassword(id,p)** -> Receives \_id and password and set password to the new one;
- - **setDefaultPrivacy(id,p)** -> Receives \_id and privacy, then sets it to default.
- 
- ### Profile
- -
+ - **setDefaultPrivacy(id,p)** -> Receives \_id and privacy, then sets it to default;
+ - **usernameToID(u)** -> Receives an username and returns its \_id, if exists, else returns _null_;
+ - **idToUsername(id)** -> Receives an \_id and returns its username, if \_id does not exist, returns _null_;
+ - **setVip(id)** -> Receives \_id and toggles VIP for user \_id provided (not useful, no features for now);
+ - **setVerified(id)** -> Receives \_id and toggles verified for the user;
+ - **setDescription(id,t)** -> Receives \_id and text to set the user's description
 
 ## SYSUTILS
 
