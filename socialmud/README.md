@@ -20,8 +20,14 @@
  - **idToUsername(id)** -> Receives an \_id and returns its username, if \_id does not exist, returns _null_;
  - **setVip(id)** -> Receives \_id and toggles VIP for user \_id provided (not useful, no features for now);
  - **setVerified(id)** -> Receives \_id and toggles verified for the user;
- - **setDescription(id,t)** -> Receives \_id and text to set the user's description
+ - **setDescription(id,d)** -> Receives \_id and text to set the user's description;
+ - **setLastActive(id)** -> Receives \_id and sets last active to Date.now() for that user;
+ - **getRegisterDate(id)** -> Receives \_id and returns register date for that user, if exists;
+ 
 
+### Friendship
+ -> Friend requests are _ALWAYS_ \[from,to]
+ - **checkRequest(u1,u2)
 ## SYSUTILS
 
 ## REGISTER
