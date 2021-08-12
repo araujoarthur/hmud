@@ -1,6 +1,6 @@
-function(context, args)
+function(c, a)
 {
-	var caller = context.caller;
+	var caller = c.caller;
 	var l = #fs.scripts.lib();
 	return { ok:false, msg:"search" };
 }

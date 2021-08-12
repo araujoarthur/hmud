@@ -1,31 +1,38 @@
 function(c, a)
 {
-	var caller = c.caller;
-	var l = #fs.scripts.lib();
+	try{
 
-	var db = #fs.socialmud.dbutils();
-	var sys = #fs.socialmud.sysutils();
-	var account;
+	
+		var caller = c.caller;
+		var l = #fs.scripts.lib();
 
-	var gui = a => #fs.socialmud.gui(a)
+		var db = #fs.socialmud.dbutils();
+		var sys = #fs.socialmud.sysutils();
+		var account;
 
-	if(sys.isLoggedIn(caller)){
-		if(a && a.sysAccount){
-			account = a.sysAccount;
+		var gui = a => #fs.socialmud.gui(a)
+
+		if(sys.isLoggedIn(caller)){
+			if(a && a.sysAccount){
+				account = a.sysAccount;
+			}else{
+				account = db.getAccount(db.getCallerAuthUser(caller));
+			}
+
+			db.setLastActive(account._id, Date.now());
+
+			let logoutAttempt = db.logout(account._id,caller)
+
+			if (logoutAttempt.ok){
+				return gui({request:["h","sm"], smMessage:"`AYou Disconnected!`", smRelSum:3});
+			}else{
+				return gui({request:["h","em"], emMessage:"`ALogout failed - Please, report this issue`", emRelSum:3});
+			}
 		}else{
-			account = db.getAccount(db.getCallerAuthUser(caller).split("_")[1]);
-			let page = db.getLastPage(account.username);
+			return sys.callPage("login");
 		}
-
-		let logoutAttempt = db.logout(account.username,caller)
-
-		if (logoutAttempt.ok){
-			return gui({request:["h","sm"], smMessage:"`AYou Disconnected!`", smRelSum:3});
-		}else{
-			return gui({request:["h","em"], emMessage:"`ALogout failed - Please, report this issue`", emRelSum:3});
-		}
-	}else{
-		return sys.callPage("login");
+	}catch(error){
+		return error.stack;
 	}
 
 }

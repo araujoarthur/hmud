@@ -5,19 +5,31 @@ function(c, a)
 
 	const ac = "account_"
 
-	/* Register & login */
+	/* Register, Login & Account */
 
-	function checkRegister(u){
-		if(#db.f({type:"account", _id:ac+u},{username:true}).first()){
+	function checkRegister(id){/* Receives _id */
+		if(#db.f({type:"account", _id:id},{username:true}).first()){
 			return true;
 		}else{
 			return false;
 		}
 	}
 
-	function registerUser(u,p){
+	function checkUsername(u){ /* Receives Username */
+		if(#db.f({type:"account", username:u},{username:true}).first()){
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	function getNonSensitiveData(u){ /* Receives Username */
+		return #db.f({type:"account", username:u}).first();
+	}
+
+	function registerUser(u,p){/* Receives username and password. GENERATES THE ID */
 		if (u && p){
-			if(checkRegister(u)){
+			if(checkRegister(ac+u)){
 				return false;
 			}else{
 				let nU = {};
@@ -26,6 +38,7 @@ function(c, a)
 				nU.username = u;
 				nU.password = p.toLowerCase();
 				nU.authcaller = "";
+				nU.attached = "";
 				nU.verified = false;
 				nU.vip = false;
 				nU.lastactive =  Date.now();
@@ -34,6 +47,7 @@ function(c, a)
 				nU.defaultprivacy = "public";
 				nU.lastpage = "";
 				nU.registerdate = Date.now();
+				nU.lastUserChange = Date.now();
 				#db.i(nU);
 				return true;
 			}
@@ -51,12 +65,12 @@ function(c, a)
 		return retRes;
 	}
 
-	function setAuthCaller(u,c){
-		#db.u({type:"account", _id:ac+u},{$set:{authcaller:c}});
+	function setAuthCaller(id,c){ /*Receives ID and Caller*/
+		#db.u({type:"account", _id:id},{$set:{authcaller:c}});
 		return true;
 	}
 
-	function getCallerAuthUser(c){
+	function getCallerAuthUser(c){ /*Receives Caller*/
 		let auth = #db.f({type:"account", authcaller:c}).first();
 		if(auth){
 			return auth._id;
@@ -65,8 +79,8 @@ function(c, a)
 		}
 	}
 
-	function getUserAuthCaller(u){
-		let auth = #db.f({type:"account", _id:ac+u}).first();
+	function getUserAuthCaller(u){ /*Receives ID*/
+		let auth = #db.f({type:"account", _id:u}).first();
 		if(auth){
 			return auth.authcaller;
 		}else {
@@ -74,8 +88,8 @@ function(c, a)
 		}
 	}
 
-	function getAccount(u){
-		let account = #db.f({type:"account", _id:ac+u}).first();
+	function getAccount(id){/* Receives ID */
+		let account = #db.f({type:"account", _id:id}).first();
 		if(account){
 			return account;
 		}else{
@@ -83,24 +97,25 @@ function(c, a)
 		}
 	}
 
-	function login(u,p,c){
+	function login(u,p,c){ //Receives username, password and caller;
 		if(getCallerAuthUser(c)){
-			return {ok:true, msg:"Caller already logged in as: "+getCallerAuthUser(c).split('_')[1], account:getAccount(u)}
+			return {ok:true, msg:"Caller already logged in as: "+idToUsername(getCallerAuthUser(c)), account:getAccount(usernameToID(u))}
 		}
-		let account = #db.f({type:"account", username:u}).first();
+		let uID = usernameToID(u);
+		let account = #db.f({type:"account", _id:uID}).first();
 		if(account){
 			if(account.password.toLowerCase() == p.toLowerCase()){
-				setAuthCaller(u,c);
-				return {ok:true, msg:"Login Authorized!", account:getAccount(u)};
+				setAuthCaller(uID,c);
+				return {ok:true, msg:"Login Authorized!", account:getAccount(uID)};
 			}else{
 				return {ok:false, msg:"Wrong Password!"};
 			}
 		}else{
-			return {ok:false, msg:"Wrong Username!"};
+			return {ok:false, msg:"Username not registered!"};
 		}
 	}
 
-	function logout(u,c){
+	function logout(u,c){ /* Receives ID and Caller */
 		if(getUserAuthCaller(u) == c){
 			setAuthCaller(u,"");
 			return {ok:true, msg:"Logout Authorized!"};
@@ -109,38 +124,95 @@ function(c, a)
 		}
 	}
 
-	function setPassword(u,p){
-		#db.u({type:"account", _id:ac+u},{$set:{password:p}})
+	function setPassword(id,p){/* Receives ID and Password */
+		#db.u({type:"account", _id:id},{$set:{password:p}})
 		return true;
 	}
 
-	function setDefaultPrivacy(u,p){
-		#db.u({type:"account", _id:ac+u},{$set:{defaultprivacy:p}});
+	function setDefaultPrivacy(id,p){
+		#db.u({type:"account", _id:id},{$set:{defaultprivacy:p}});
 		return true;
 	}
 
-	/* Profile */
+	function usernameToID(u){ /* Receives Username */
+		let id = #db.f({type:"account", username:u},{_id:true}).first();
+		if(id){
+			return id._id;
+		}else{
+			return null;
+		}
+	}
 
-	function setDescription(u,d){
-		#db.u({type:"account", _id:ac+u},{$set:{description:d}});
+	function idToUsername(id){/* Receives ID */
+		let username = #db.f({type:"account", _id:id},{username:true}).first();
+		if(username){
+			return username.username;
+		}else{
+			return null;
+		}
+	}
+
+	function setVip(id){ /* Receives ID */
+		let uDoc = #db.f({type:"account", _id:id},{vip:true}).first();
+		if(uDoc){
+			#db.u({type:"account", _id:id},{$set:{vip:!uDoc.vip}});
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	function setVerified(id){/* Receives ID */
+		let uDoc = #db.f({type:"account", _id:id},{verified:true}).first();
+		if(uDoc){
+			#db.u({type:"account", _id:id},{$set:{verified:!uDoc.verified}});
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	function setDescription(id,d){/* Receives ID and Description */
+		#db.u({type:"account", _id:id},{$set:{description:d}});
 		return true;
 	}
 
-	function setLastActive(u){
-		#db.u({type:"account", _id:ac+u},{$set:{lastactive:Date.now()}});
+	function setLastActive(id){ /* Receives ID */
+		#db.u({type:"account", _id:id},{$set:{lastactive:Date.now()}});
 		return true;
 	}
 
-	function getRegisterDate(u){
-		return #db.f({type:"account", _id:ac+u}, {registerdate:true}).first().registerdate;
+	function getRegisterDate(id){ /* Receives ID */
+		return #db.f({type:"account", _id:id}, {registerdate:true}).first().registerdate;
 	}
+
+
 
 	/* Friendship */
 
-	function sendRequest(f,r){
+	function checkRequest(u1,u2){ /* Receives IDs (u1 and u2) */
+		let request = #db.f({type:"request", $and:[{users:u1},{users:u2}]}).first();
+		if(request){
+			return {ok:true, from:request.users[0], to:request.users[1]};
+		}else{
+			return {ok:false};
+		}
+	}
+
+	function checkFriendship(u1,u2){/* Receives ID */
+		let accountU1 = #db.f({type:"account", _id:u1}).first();
+		if(accountU1.friends.includes(u2)){
+			return {ok:true, friendship:true, u1:idToUsername(u1), u2:idToUsername(u2)};
+		}else{
+			return {ok:false, friendship:false, u1:idToUsername(u1), u2:idToUsername(u2)};
+		}
+	}
+
+
+	function sendRequest(f,r){/* Receives IDs (from and receiver) */
 		let req = {}
 		req.type = "request";
-		req.users = [ac+f,ac+r];
+		req.users = [f,r];
 
 		try {
 			#db.us(req,{$setOnInsert:{date:Date.now()}})
@@ -150,18 +222,18 @@ function(c, a)
 		}
 	}
 
-	function removeRequest(u){
-		if(#db.r({users:ac+u})[0].n){
+	function removeRequest(u1,u2){/* Takes 2 IDs (u1 and u2) */
+		if(#db.r({type:"request", $and:[{users:u1},{users:u2}]})){
 			return true;
 		}else{
 			return false;
 		}
 	}
 
-	function createFriendship(f,r){
-		let friendships = [#db.u({type:"account", _id:ac+f},{$addToSet:{friends:ac+r}}), #db.u({type:"account", _id:ac+r},{$addToSet:{friends:ac+f}})];
+	function createFriendship(f,r){/*takes two ids (f and r)*/
+		let friendships = [#db.u({type:"account", _id:f},{$addToSet:{friends:r}}), #db.u({type:"account", _id:r},{$addToSet:{friends:f}})];
 		if(friendships[0][0].nModified == 1 && friendships[1][0].nModified == 1){
-			return removeRequest(f);
+			return removeRequest(f,r);
 			return true;
 		}else{
 			removeFriendship(f,r);
@@ -169,13 +241,13 @@ function(c, a)
 		}
 	}
 
-	function removeFriendship(f,r){
-		let friendships = #db.u({type:"account", _id:{$in:[ac+f,ac+r]}},{$pullAll:{friends:[ac+r,ac+f]}});
+	function removeFriendship(f,r){/* Receives ID */
+		let friendships = #db.u({type:"account", _id:{$in:[f,r]}},{$pullAll:{friends:[r,f]}});
 		return true;
 	}
 
 	function getRequest(f,r){
-		let request = #db.f({type:"request", "users.0":ac+f, "users.1":ac+r}).first();
+		let request = #db.f({type:"request", "users.0":f, "users.1":r}).first();
 		if(request){
 			return request;
 		}else{
@@ -183,82 +255,102 @@ function(c, a)
 		}
 	}
 
-	function getFriendCount(u){
-		let dbres = #db.f({type:"account", _id:ac+u},{friends:true}).first();
+	function getFriendCount(id){
+		let dbres = #db.f({type:"account", _id:id},{friends:true}).first();
 		return dbres.friends.length;
 	}
 
-	function getReceivedRequests(u){
-		let requests = #db.f({type:"request", "users.1":ac+u}).array();
-		if(requests){
-			return requests
-		}else{
-			return null;
-		}
-	}
-
-	function getSentRequests(u){
-		let requests = #db.f({type:"request", "users.0":ac+u}).array();
-		if(requests){
+	function getReceivedRequests(id){
+		let requests = #db.f({type:"request", "users.1":id}).array();
+		if(requests.length > 0){
 			return requests;
 		}else{
 			return null;
 		}
 	}
 
-	function getReceivedRequestsCount(u){
-		return #db.f({type:"request", "users.1":ac+u}).count();
+	function getSentRequests(id){ /* receives userID */
+		let requests = #db.f({type:"request", "users.0":id}).array();
+		if(requests.length > 0){
+			return requests;
+		}else{
+			return null;
+		}
 	}
 
-	function getSentRequestsCount(u){
-		return #db.f({type:"request", "users.0":ac+u}).count();
+	function getReceivedRequestsCount(id){
+		return #db.f({type:"request", "users.1":id}).count();
 	}
 
-	function getFriendList(u){
-		return #db.f({type:"account", _id:ac+u},{friends:true}).first().friends;
+	function getSentRequestsCount(id){
+		return #db.f({type:"request", "users.0":id}).count();
+	}
+
+	function getFriendList(id){
+		return #db.f({type:"account", _id:id},{friends:true}).first().friends;
 	}
 
 	/* Posts */
-	function createPost(u,l,t,p){
+	function postExists(pId){
+		if(#db.f({type:"post", _id:{$oid:pId}}).first()){
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	function getUserLastPost(id){
+		let post = #db.f({type:"post", author:id}).sort({date:-1}).first();
+		if(post){
+			return post;
+		}else{
+			return null;
+		}
+	}
+
+	function findPostByText(text){
+		let post = #db.f({type:"post", content:text}).sort({date:-1}).first();
+		if(post){
+			return post;
+		}else{
+			return null;
+		}
+	}
+
+	function createPost(id,l,t,p){
 		let post = {}
+		post._id = #db.ObjectId();
 		post.type = "post";
-		post.author = ac+u;
-		post.location = l;
+		post.author = id;
+		post.location = usernameToID(l);
 		post.content = t;
 		post.date = Date.now();
 		post.privacy = p;
 		post.agrees = [];
 		post.disagrees = [];
 		#db.i(post);
-		return true;
+		return {ok:true, post:post}
 	}
 
-	function postAgree(pId,u){
+	function postAgree(pId,id){
 		let post = #db.f({type:"post", _id:{$oid:pId}}).first();
 		if(post){
-				#db.u({type:"post", _id:{$oid:pId}},{$pull:{disagrees:u},$addToSet:{agrees:u}});
+				#db.u({type:"post", _id:{$oid:pId}},{$pull:{disagrees:id},$addToSet:{agrees:id}});
 				return {ok:true, msg:"Agreed!"};
 		}else{
 			return {ok:false, msg:"Wrong ID"}
 		}
 	}
 
-	function setPostPrivacy(u,pId,p){
-		let user = #db.f({type:"account", _id:ac+u}).first();
-		let post = #db.f({type:"post", _id:{$Oid:pId}}).first();
-		if (user._id == post.author){
-			#db.u({type:"post", _id:{$oid:pId}}, {$set:{privacy:p}})
-			return{ok:true, msg:"Privacy Updated!"};
-		}else{
-			return {ok:false, msg:"You're not post author"};
-		}
-
+	function setPostPrivacy(id,pId,p){
+		#db.u({type:"post", _id:{$oid:pId}}, {$set:{privacy:p}});
+		return true;
 	}
 
-	function postDisagree(pId,u){
+	function postDisagree(pId,id){
 		let post = #db.f({type:"post", _id:{$oid:pId}}).first();
 		if(post){
-				#db.u({type:"post", _id:{$oid:pId}},{$pull:{agrees:u},$addToSet:{disagrees:u}});
+				#db.u({type:"post", _id:{$oid:pId}},{$pull:{agrees:id},$addToSet:{disagrees:id}});
 				return {ok:true, msg:"Disagreed!"};
 		}else{
 			return {ok:false, msg:"Wrong ID"}
@@ -301,8 +393,8 @@ function(c, a)
 		}
 	}
 
-	function getPostsFromUser(u,n){//gets posts from user
-		let posts = #db.f({type:"post", author:ac+u}).sort({date:-1}).limit(n).array();
+	function getPostsFromUser(id,n){//gets posts from user
+		let posts = #db.f({type:"post", author:id}).sort({date:-1}).limit(n).array();
 		if(posts){
 			return posts;
 		}else {
@@ -310,12 +402,12 @@ function(c, a)
 		}
 	}
 
-	function getUserPostCount(u){//gets post count for user
-		return #db.f({type:"post", author:ac+u}).count();
+	function getUserPostCount(id){//gets post count for user
+		return #db.f({type:"post", author:id}).count();
 	}
 
-	function getFeedPostCount(feed,u){//gets post count for user
-		return #db.f({type:"post", location:u, author:{$ne:ac+u}}).count();
+	function getFeedPostCount(feed,id){//gets post count received by user
+		return #db.f({type:"post", location:feed, author:{$ne:id}}).count();
 	}
 
 	function getPostsFromFriends(friends,n){//Gets posts only from friends
@@ -327,8 +419,8 @@ function(c, a)
 		}
 	}
 
-	function getVisiblePosts(u,friends,n){//Gets posts from user and friend
-		let posts = #db.f({type:"post", author:{$in:[ac+u,...friends]}}).sort({date:-1}).limit(n).array();
+	function getVisiblePosts(id,friends,n){//Gets posts from user and friend
+		let posts = #db.f({type:"post", author:{$in:[id,...friends]}}).sort({date:-1}).limit(n).array();
 		if(posts){
 			return posts;
 		}else{
@@ -346,18 +438,22 @@ function(c, a)
 	}
 
 	function removePost(pId){
-		#db.r({type:"post", _id:{$oid:pId}});
-		return true;
+		if(#db.f({type:"post", _id:{$oid:pId}}).first()){
+			#db.r({type:"post", _id:{$oid:pId}});
+			return true;	
+		}else{
+			return false;
+		}
 	}
 
 	/* Navigation */
 
-	function getLastPage(u){
-		return #db.f({type:"account", _id:ac+u},{lastpage:true}).first();
+	function getLastPage(id){
+		return #db.f({type:"account", _id:id},{lastpage:true}).first();
 	}
 
-	function setLastPage(u,p){
-		#db.u({type:"account", _id:ac+u},{$set:{lastpage:p}})
+	function setLastPage(id,p){
+		#db.u({type:"account", _id:id},{$set:{lastpage:p}})
 	}
 
 	/*Flow*/
@@ -365,52 +461,61 @@ function(c, a)
 	if(!a || !a.cli){
 		return {view:a => #db.f({}).array(),
 		reset:a => #db.r({}),
-		checkRegister:checkRegister,
-		removeRequest:removeRequest,
-		removeFriendship:removeFriendship,
-		registerUser:registerUser,
-		sendRequest:sendRequest,
-		createFriendship:createFriendship,
-		getFriendCount:getFriendCount,
-		getReceivedRequests:getReceivedRequests,
-		getReceivedRequestsCount:getReceivedRequestsCount,
-		getSentRequestsCount:getSentRequestsCount,
-		getSentRequests:getSentRequests,
-		getFriendList:getFriendList,
-		setAuthCaller:setAuthCaller,
-		getCallerAuthUser:getCallerAuthUser,
-		getUserAuthCaller:getUserAuthCaller,
-		login:login,
-		logout:logout,
-		setDescription:setDescription,
-		setLastActive:setLastActive,
-		createPost:createPost,
-		getPostsFromUser:getPostsFromUser,
-		getUserPostCount:getUserPostCount,
-		getPostsFromFriends:getPostsFromFriends,
-		removePost:removePost,
-		postAgree:postAgree,
-		postDisagree:postDisagree,
-		getPostAgrees:getPostAgrees,
-		getPostDisagrees:getPostDisagrees,
-		getPostAgreesCount:getPostAgreesCount,
-		getPostDisagreesCount:getPostDisagreesCount,
-		setDefaultPrivacy:setDefaultPrivacy,
-		setPostPrivacy:setPostPrivacy,
-		getVisiblePosts:getVisiblePosts,
-		getPostsOnFeed:getPostsOnFeed,
-		getLastPage:getLastPage,
-		setLastPage:setLastPage,
-		getAccount:getAccount,
-		getFeedPostCount:getFeedPostCount,
-		getRegisterDate:getRegisterDate,
-		searchUser:searchUser}
+		checkRegister,
+		removeRequest,
+		removeFriendship,
+		registerUser,
+		sendRequest,
+		createFriendship,
+		getFriendCount,
+		getReceivedRequests,
+		getReceivedRequestsCount,
+		getSentRequestsCount,
+		getSentRequests,
+		getFriendList,
+		setAuthCaller,
+		getCallerAuthUser,
+		getUserAuthCaller,
+		login,
+		logout,
+		setDescription,
+		setLastActive,
+		createPost,
+		getPostsFromUser,
+		getUserPostCount,
+		getPostsFromFriends,
+		removePost,
+		postAgree,
+		postDisagree,
+		getPostAgrees,
+		getPostDisagrees,
+		getPostAgreesCount,
+		getPostDisagreesCount,
+		setDefaultPrivacy,
+		setPostPrivacy,
+		getVisiblePosts,
+		getPostsOnFeed,
+		getLastPage,
+		setLastPage,
+		getAccount,
+		getFeedPostCount,
+		getRegisterDate,
+		searchUser,
+		postExists,
+		checkUsername,
+		getNonSensitiveData,
+		checkRequest,
+		checkFriendship,
+		idToUsername,
+		usernameToID,
+		getUserLastPost,
+		findPostByText}
 	}else{
 		switch(a.func.toLowerCase()){
 			case "view": return #db.f({}).array();
 			case "reset": return #db.r({});
 			case "checkregister": return checkRegister(a.u);
-			case "removerequest": return removeRequest(a.u);
+			case "removerequest": return removeRequest(a.u1,a.u2);
 			case "removefriendship": return removeFriendship(a.f,a.r);
 			case "registeruser": return registerUser(a.u,a.p);
 			case "sendrequest": return sendRequest(a.f,a.r);
@@ -446,7 +551,12 @@ function(c, a)
 			case "getaccount": return getAccount(a.u);
 			case "getfeedpostcount": return getFeedPostCount(a.feed, a.u);
 			case "getregisterdate": return getRegisterDate(a.u);
-			case "searchuser": return searchUser(a.w);
+			case "searchuser": return searchUser(a.w)
+			case "getnonsensitivedata": return getNonSensitiveData(a.u);
+			case "checkrequest": return checkRequest(a.u1,a.u2);
+			case "checkfriendship": return checkFriendship(a.u1,a.u2);
+			case "getuserlastpost": return getUserLastPost(a.u);
+			case "findpostbytext": return findPostByText(a.text);
 		}
 	}
 

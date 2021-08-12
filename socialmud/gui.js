@@ -6,6 +6,8 @@ function(context, args)
 
 	var wid = 109;
 
+	var g_sHeaderIdxCount = 0;
+
 	function padNum(n,w=2){
   	return (n+'').padStart(w,0)
 	}
@@ -59,7 +61,7 @@ function(context, args)
 
 		let l=[
 				"`A  ╔"+"═".repeat(wid)+"╗`\n",
-				"`A  ║  Hello, ``C"+user+("``AYou got ``L"+friends+"``A friends and ``L"+req+"``A requests ").padStart(wid-user.length+6)+"║`\n",
+				"`A  ║  Hello, ``C"+user+("``AYou have ``L"+friends+"``A friends and ``L"+req+"``A requests ").padStart(wid-user.length+6)+"║`\n",
 				"`A  ╚"+"═".repeat(wid)+"╝`\n"
 		]
 		return l.join("");
@@ -68,12 +70,14 @@ function(context, args)
 	function drawPosts(posts){
 		let l = ["`A  ╔"+"═".repeat(wid)+"╗`\n"];
 		for(let post of posts){
-			let author = db.getAccount(post.author.split("_")[1]);
-			post.author = post.author.split("_")[1];
+			let author = db.getAccount(post.author);
+			let loc = post.author == post.location ? "own feed" : db.idToUsername(post.location);
+			post.author = db.idToUsername(post.author);
 			post.author = author.verified ? "`R "+ post.author + "``J [⌽]`" : "`R"+post.author+"`";
 			let relativeSum =  author.verified ? 2 : - 1
-			let loc = post.author == post.location ? "own feed" : post.location;
 			let formatedDate = new Date(post.date);
+			let agrees = db.getPostAgreesCount(post._id.$oid);
+			let disagrees = db.getPostDisagreesCount(post._id.$oid);
 			formatedDate = formatDate(formatedDate);
 
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
@@ -84,6 +88,7 @@ function(context, args)
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			post.content.match(new RegExp(".{1,"+(wid-2)+"}(?: |$)","mg")).map(o=>l.push("`A  ║ "+o.trim().padEnd(wid-2)+" ║`\n"));
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
+			l.push("`A  ║`"+("  `L"+agrees+"`   `D"+disagrees+"`").padEnd(wid+6)+"`A║`\n");
 			l.push("`A  ║"+"━".repeat(wid)+"║`\n");
 		}
 		l.push("`A  ╚"+"═".repeat(wid)+"╝`\n");
@@ -146,8 +151,49 @@ function(context, args)
 		let l = [
 			"`A  ╔"+"═".repeat(wid)+"╗`\n",
 			"`A  ║"+" ".repeat(wid)+"║`\n",
-			"`A  ║``P"+page.padEnd((wid+page.length-3)/2).padStart(wid)+"``A║`\n",
+			"`A  ║``P"+page.padStart((wid+page.length+3)/2).padEnd(wid)+"``A║`\n",
 			"`A  ║"+" ".repeat(wid)+"║`\n",
+			"`A  ╚"+"═".repeat(wid)+"╝`\n"
+		]
+		return l.join("");
+	}
+
+	function  drawSubHeaders(headers){/* [["text", relsum],["text", relsum],...] */
+
+		let l = [
+			"`A  ╔"+"═".repeat(wid)+"╗`\n",
+			"`A  ║"+" ".repeat(wid)+"║`\n",
+			"`A  ║`"+headers[g_sHeaderIdxCount][0].padStart((wid+headers[g_sHeaderIdxCount][0].length+headers[g_sHeaderIdxCount][1])/2).padEnd(wid+headers[g_sHeaderIdxCount][1])+"`A║`\n",
+			"`A  ║"+" ".repeat(wid)+"║`\n",
+			"`A  ╚"+"═".repeat(wid)+"╝`\n"
+		]
+
+		g_sHeaderIdxCount += 1;
+		return l.join("");
+	}
+
+	function drawWarn(text, relativeSum){/* [["text", relsum],["text", relsum],...] */
+		let l = [
+			"`A  ╔"+"═".repeat(wid)+"╗`\n",
+			"`A  ║`"+text.padStart((wid+text.length+relativeSum)/2).padEnd(wid+relativeSum)+"`A║`\n",
+			"`A  ╚"+"═".repeat(wid)+"╝`\n"
+		]
+		return l.join("");
+	}
+
+	function drawNotify(notify){
+		let l = [];
+		for(let notific of notify){
+			 l.push(drawWarn(notific[0],notific[1]));
+		}
+		return l.join("");
+	}
+
+	function drawPostInstructions(){
+		let text = "To post, you must provide  postContent:\"content\". The argument postLocation:\"location\" is optional."
+		let l = [
+			"`A  ╔"+"═".repeat(wid)+"╗`\n",
+			"`A  ║ "+text.padStart((wid+text.length)/2).padEnd(wid-1)+"║`\n",
 			"`A  ╚"+"═".repeat(wid)+"╝`\n"
 		]
 		return l.join("");
@@ -156,11 +202,11 @@ function(context, args)
 	function drawProfile(account){
 		let widProfileLeft = 61;
 		let widProfileRight = 46;
-		let postCount = db.getUserPostCount(account.username);
-		let registerDate = db.getRegisterDate(account.username);
-		let friendCount = db.getFriendCount(account.username);
+		let postCount = db.getUserPostCount(account._id);
+		let registerDate = db.getRegisterDate(account._id);
+		let friendCount = db.getFriendCount(account._id);
 		let relativeSum  = account.verified ? -7:-10
-		let postsReceived = db.getFeedPostCount(account.username, account.username);
+		let postsReceived = db.getFeedPostCount(account._id, account._id);
 		account.username =  account.verified ? "`O" + account.username + "` `H[⌽]`" : "`O" + account.username + "`";
 		let formatedDate = formatDate(account.lastactive);
 		let formatSince = formatDate(account.registerdate);
@@ -213,35 +259,40 @@ function(context, args)
 
 	}
 
-	function drawSentRequests(user){
-
-		let  requestsJS = db.getSentRequests(user);
-		let requests = [];
-
-		for(let requestOBJ of requestsJS){
-			requests.push(requestOBJ.users[1].split("_")[1]);
-		}
-
-		let requestSetup = [];
-		while(requests.length) requestSetup.push(requests.splice(0,5));
-
+	function drawSentRequests(user){/* receives username */
+		user = db.usernameToID(user);
 		let l = [
 			"`A  ╔"+"═".repeat(wid)+"╗`\n",
 			"`A  ║"+" ".repeat(wid)+"║`\n",
 		];
 
-		for(let requestset of requestSetup){
+		let  requestsJS = db.getSentRequests(user);
+		let requests = [];
 
-			let strRequests = "";
-			for (let request of requestset){
-				if(request == requestset[requestset.length-1]){
-					strRequests = strRequests + request
-				}else {
-					strRequests = strRequests + request + " | ";
-				}
+		if (!(requestsJS == null)){
+			for(let requestOBJ of requestsJS){
+				requests.push(db.idToUsername(requestOBJ.users[1]));
 			}
 
-			l.push("`A  ║"+strRequests.padStart((wid+strRequests.length)/2).padEnd(wid)+"║`\n");
+	
+			let requestSetup = [];
+			while(requests.length) requestSetup.push(requests.splice(0,5));
+	
+			for(let requestset of requestSetup){
+	
+				let strRequests = "";
+				for (let request of requestset){
+					if(request == requestset[requestset.length-1]){
+						strRequests = strRequests + request
+					}else {
+						strRequests = strRequests + request + " | ";
+					}
+				}
+	
+				l.push("`A  ║"+strRequests.padStart((wid+strRequests.length)/2).padEnd(wid)+"║`\n");
+			}
+		}else{
+			l.push("`A  ║``L"+"Empty".padStart((wid+5+1)/2).padEnd(wid)+"``A║`\n");	
 		}
 
 		l.push("`A  ║"+" ".repeat(wid)+"║`\n");
@@ -251,35 +302,44 @@ function(context, args)
 
 	}
 
-	function drawReceivedRequests(user){
-		let  requestsJS = db.getReceivedRequests(user);
-		let requests = [];
+	function drawReceivedRequests(user){/* receives username */
+		user = db.usernameToID(user);
 
-		for(let requestOBJ of requestsJS){
-			requests.push(requestOBJ.users[0].split("_")[1]);
-		}
-
-		let requestSetup = [];
-		while(requests.length) requestSetup.push(requests.splice(0,5));
 
 		let l = [
 			"`A  ╔"+"═".repeat(wid)+"╗`\n",
 			"`A  ║"+" ".repeat(wid)+"║`\n",
 		];
 
-		for(let requestset of requestSetup){
+		let  requestsJS = db.getReceivedRequests(user);
 
-			let strRequests = "";
-			for (let request of requestset){
-				if(request == requestset[requestset.length-1]){
-					strRequests = strRequests + request
-				}else {
-					strRequests = strRequests + request + " | ";
-				}
+		let requests = [];
+
+		if (!(requestsJS == null)){
+			for(let requestOBJ of requestsJS){
+				requests.push(db.idToUsername(requestOBJ.users[0]));
 			}
-
-			l.push("`A  ║"+strRequests.padStart((wid+strRequests.length)/2).padEnd(wid)+"║`\n");
+			let requestSetup = [];
+			while(requests.length) requestSetup.push(requests.splice(0,5));
+		
+			for(let requestset of requestSetup){
+	
+				let strRequests = "";
+				for (let request of requestset){
+					if(request == requestset[requestset.length-1]){
+						strRequests = strRequests + request
+					}else {
+						strRequests = strRequests + request + " | ";
+					}
+				}
+	
+				l.push("`A  ║"+strRequests.padStart((wid+strRequests.length)/2).padEnd(wid)+"║`\n");
+			}
+		}else{
+			l.push("`A  ║``L"+"Empty".padStart((wid+5+1)/2).padEnd(wid)+"``A║`\n");
 		}
+
+		
 
 		l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 		l.push("`A  ╚"+"═".repeat(wid)+"╝`\n");
@@ -346,6 +406,18 @@ function(context, args)
 		}
 		if(request == "sm"){
 			res.push(drawSuccessMessage(a.smMessage, a.smRelSum));
+		}
+		if(request == "dw"){
+			res.push(drawWarn(a.wMessage, a.wRelSum));
+		}
+		if(request == "nn"){
+			res.push(drawNotify(a.nnNotifications));
+		}
+		if(request == "pi"){
+			res.push(drawPostInstructions());
+		}
+		if(request == "sh"){
+			res.push(drawSubHeaders(a.shHeaders))
 		}
 	}
 
