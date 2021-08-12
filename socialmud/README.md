@@ -1,1 +1,22 @@
 # SOCIALMUD DOCUMENTATION
+
+## DBUTILS
+ 
+
+## SYSUTILS
+
+## REGISTER
+
+## LOGIN
+
+## LOGOUT
+
+## FEED
+
+## PROFILE
+
+## SEARCH
+
+## DETAILS
+
+## GUI
