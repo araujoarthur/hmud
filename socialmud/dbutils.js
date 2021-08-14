@@ -5,6 +5,14 @@ function(c, a)
 
 	const ac = "account_"
 
+	/* Useful */
+
+	function parseDate(str) {
+        var res=str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if(!res)return {ok:false};
+        return +new Date(+res[3],res[1]-1,+res[2]);
+    }
+
 	/* Register, Login & Account */
 
 	function checkRegister(id){/* Receives _id */
@@ -97,7 +105,7 @@ function(c, a)
 		}
 	}
 
-	function login(u,p,c){ //Receives username, password and caller;
+	function login(u,p,c){ /*Receives username, password and caller*/
 		if(getCallerAuthUser(c)){
 			return {ok:true, msg:"Caller already logged in as: "+idToUsername(getCallerAuthUser(c)), account:getAccount(usernameToID(u))}
 		}
@@ -393,48 +401,75 @@ function(c, a)
 		}
 	}
 
-	function getPostsFromUser(id,n){//gets posts from user
-		let posts = #db.f({type:"post", author:id}).sort({date:-1}).limit(n).array();
-		if(posts){
-			return posts;
-		}else {
-			return null;
+	function getPostsFromUser(id,n,oldDate, newDate){/*gets posts from user*/
+		let posts;
+		if(oldDate && newDate){
+			oldDate = parseDate(oldDate).msg;
+			newDate = parseDate(newDate).msg;
+			posts = #db.f({type:"post", author:id, date:{$gte:oldDate,$lte:newDate}}).sort({date:-1}).limit(n).array();
+			
+		}else{
+			posts = #db.f({type:"post", author:id}).sort({date:-1}).limit(n).array();
 		}
+		
+		return posts.length > 0 ? posts : null;
 	}
 
-	function getUserPostCount(id){//gets post count for user
+	function getUserPostCount(id){/*gets post count for user*/
 		return #db.f({type:"post", author:id}).count();
 	}
 
-	function getFeedPostCount(feed,id){//gets post count received by user
+	function getFeedPostCount(feed,id,oldDate,newDate){/*gets post count received by user*/
 		return #db.f({type:"post", location:feed, author:{$ne:id}}).count();
 	}
 
-	function getPostsFromFriends(friends,n){//Gets posts only from friends
-		let posts = #db.f({type:"post", author:{$in:friends}}).sort({date:-1}).limit(n).array();
-		if(posts){
-			return posts;
+	function getPostsFromFriends(friends,n,oldDate,newDate){/*Gets posts only from friends*/
+		let posts;
+		if(oldDate && newDate){
+			oldDate = parseDate(oldDate).msg;
+			newDate = parseDate(newDate).msg;
+			#db.f({type:"post", author:{$in:friends}, date:{$gte:oldDate,$lte:newDate}}).sort({date:-1}).limit(n).array();
 		}else{
-			return null;
+			posts = #db.f({type:"post", author:{$in:friends}}).sort({date:-1}).limit(n).array();
 		}
+		return posts.length > 0 ? posts : null;
 	}
 
-	function getVisiblePosts(id,friends,n){//Gets posts from user and friend
-		let posts = #db.f({type:"post", author:{$in:[id,...friends]}}).sort({date:-1}).limit(n).array();
-		if(posts){
-			return posts;
+	function getVisiblePosts(id,friends,n,oldDate,newDate){/*Gets posts from user and friend*/
+		let posts;
+		if(oldDate && newDate){
+			oldDate = parseDate(oldDate);
+			newDate = parseDate(newDate);
+			posts = #db.f({type:"post", author:{$in:[id,...friends]}, date:{$gte:oldDate,$lte:newDate}}).sort({date:-1}).limit(n).array();	
 		}else{
-			return null;
+			posts = #db.f({type:"post", author:{$in:[id,...friends]}}).sort({date:-1}).limit(n).array();
 		}
+		return posts.length > 0 ? posts : null;
 	}
 
-	function getPostsOnFeed(feed,n){//Gets posts on specific feed
-		let posts = #db.f({type:"post", location:feed}).sort({date:-1}).limit(n).array();
-		if(posts){
-			return posts;
-		}else {
-			return null;
+	function getGlobalFeed(n,oldDate,newDate){
+		let posts;
+		if(oldDate && newDate){
+			oldDate = parseDate(oldDate);
+			newDate = parseDate(newDate);
+			posts = #db.f({type:"post", date:{$gte:oldDate,$lte:newDate}}).sort({date:-1}).limit(n).array;
+		}else{
+			posts = #db.f({type:"post"}).sort({date:-1}).limit(n).array;
 		}
+		return posts.length > 0 ? posts : null;
+	}
+
+	function getPostsOnFeed(feed,n,oldDate,newDate){/*Gets posts on specific feed*/
+		let posts;
+		if(oldDate && newDate){
+			oldDate = parseDate(oldDate);
+			newDate = parseDate(newDate);
+			posts = #db.f({type:"post", location:feed, date:{$gte:oldDate,$lte:newDate}}).sort({date:-1}).limit(n).array();
+		}else{
+			posts = #db.f({type:"post", location:feed}).sort({date:-1}).limit(n).array();
+		}
+
+		return posts.length > 0 ? posts : null;
 	}
 
 	function removePost(pId){
@@ -444,6 +479,10 @@ function(c, a)
 		}else{
 			return false;
 		}
+	}
+
+	function getPost(pID){
+		return #db.f({type:"post", _id:{$oid:pID}}).first();	
 	}
 
 	/* Navigation */
@@ -509,7 +548,9 @@ function(c, a)
 		idToUsername,
 		usernameToID,
 		getUserLastPost,
-		findPostByText}
+		findPostByText,
+		getPost
+	}
 	}else{
 		switch(a.func.toLowerCase()){
 			case "view": return #db.f({}).array();

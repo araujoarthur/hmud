@@ -24,7 +24,7 @@ function(context, args)
 				"`A  ║"+" ".repeat(wid)+"║`\n",
 		]
 
-		if(topic == ""){
+		if(topic.toLowerCase() == ""){
 			l.push("`A  ║``M  SELECT A TOPIC WITH topic:\"topic\" ` `A                                                                        ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
@@ -34,6 +34,7 @@ function(context, args)
 			l.push("`A  ║ * ``Vregister``A                                                                                                  ║`\n");
 			l.push("`A  ║ * ``Vlogin``A                                                                                                     ║`\n");
 			l.push("`A  ║ * ``Vprofile``A                                                                                                   ║`\n");
+			l.push("`A  ║ * ``Vfriends``A                                                                                                   ║`\n");
 			l.push("`A  ║ * ``Vfeed``A                                                                                                      ║`\n");
 			l.push("`A  ║ * ``Vdetails``A                                                                                                   ║`\n");
 			l.push("`A  ║ * ``Vsearch``A                                                                                                    ║`\n");
@@ -42,18 +43,18 @@ function(context, args)
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║  ``LWant to know who has a hand into` `csocial``Rmud``L? Check socialmud.credits``A                                        ║`\n");
-		}else if(topic=="register"){
+		}else if(topic.toLowerCase()=="register"){
 			l.push("`A  ║``H REGISTER ` `A                                                                                                  ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║  You can register at socialmud.register by providing an ``Nusername``A and``N password``A that doesn't exist yet.       ║`\n");
 			l.push("`A  ║  Choose your username and password wisely, they are unchangeable and will stay this way for a while.        ║`\n");
-		}else if(topic=="aboutgui"){
+		}else if(topic.toLowerCase()=="aboutgui"){
 			l.push("`A  ║``H ABOUT GUI ` `A                                                                                                 ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║  ``csocial``Rmud``A GUI is made of 113 chars, so there's a minimum col's you need in order to get it to work         ║`\n");
-		}else if(topic=="login"){
+		}else if(topic.toLowerCase() =="login"){
 			l.push("`A  ║``H LOGIN ` `A                                                                                                     ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
@@ -62,7 +63,7 @@ function(context, args)
 			l.push("`A  ║  Once you have logged in, the script sets your hackmud username as auth for that profile so you are able    ║`\n");
 			l.push("`A  ║  to navigate to other pages without providing ``Nusername``A and``N password``A again. This will stay this way until    ║`\n");
 			l.push("`A  ║  you logout at socialmud.logout                                                                             ║`\n");
-		}else if(topic == "profile"){
+		}else if(topic.toLowerCase() == "profile"){
 			l.push("`A  ║``H PROFILE ` `A                                                                                                   ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
@@ -70,7 +71,7 @@ function(context, args)
 			l.push("`A  ║  profile:\"username\".                                                                                        ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║  You can also add friends from this page by using addFriend:\"username\" to send a request                    ║`\n");
-		}else if(topic == "feed"){
+		}else if(topic.toLowerCase() == "feed"){
 			l.push("`A  ║``H FEED ` `A                                                                                                      ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
@@ -87,15 +88,29 @@ function(context, args)
 			l.push("`A  ║  *You can show that you agree or disagree with posts using postAgree:\"postId\" or postDisagree:\"postId\"``A.     ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║  *You can see datails of any post on socialmud.details with postID:\"postID\".                                ║`\n");
-		}else if(topic == "post"){
+		}else if(topic.toLowerCase() == "post"){
 			l.push("`A  ║``H POSTING ` `A                                                                                                   ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║  You can post from socialmud.post by using postContent:\"text\" argument. If you don't want to post into your ║`\n");
 			l.push("`A  ║  own feed, you can specify a friend's feed with postLocation:\"username\". Posts have a cap of 400 chars. Pay ║`\n");
 			l.push("`A  ║  attention to the fact that coloring ``Lis supported` `Abut is considered in character cap.                       ║`\n");
+		}else if(topic.toLowerCase() == "friends"){
+			l.push("`A  ║``H FRIENDS ` `A                                                                                                   ║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
+			l.push("`A  ║  You can manage your friends from socialmud.friends.                                                        ║`\n");
+			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
+			l.push("`A  ║  *To add a friend: addFriend:\"username\"                                                                     ║`\n");
+			l.push("`A  ║  *To accept a request you received: acceptRequest:\"username\"                                                ║`\n");
+			l.push("`A  ║  *To reject a request you received: rejectRequest:\"username\"                                                ║`\n");
+			l.push("`A  ║  *To remove a request you sent: removeRequest:\"username\"                                                    ║`\n");
+			l.push("`A  ║  *To remove a friend: removeFriend:\"username\"                                                               ║`\n");
+		}else if(topic.toLowerCase() == "details"){
+			l.push("`A  ║``H FRIENDS ` `A                                                                                                   ║`\n");
+			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
+			l.push("`A  ║"+" ".repeat(wid)+"║`\n");
+			l.push("`A  ║  Run socialmud.details with post:\"postID\" to see post details                                               ║`\n");
 		}
 		l.push("`A  ║"+" ".repeat(wid)+"║`\n");
 		l.push("`A  ║"+" ".repeat(wid)+"║`\n");

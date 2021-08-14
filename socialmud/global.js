@@ -1,21 +1,24 @@
-function(c, a)
+function(context, args)
 {
+	var caller = context.caller;
+	var l = #fs.scripts.lib();
 	var caller = c.caller;
 	var l = #fs.scripts.lib();
 	var sys = #fs.socialmud.sysutils();
 	var db = #fs.socialmud.dbutils();
+	var n;
 	var account;
 	var guiObj = {};
 	const ac = "account_";
-	
+
 	guiObj.request = [];
 
 	guiObj.request.push("h","n","t","hp");
 	guiObj.nOptions = ["profile", "friends", "post", "search", "logout"];
 	guiObj.nnNotifications = [];
-	guiObj.hpTitle = "! Search !"
-
+	guiObj.hpTitle = "! Global Feed !";
 	var gui = a => #fs.socialmud.gui(a);
+		
 
 	if(!sys.isLoggedIn(caller)){
 		return sys.callPage("login");
@@ -31,22 +34,15 @@ function(c, a)
 		guiObj.tFriends = db.getFriendCount(account._id);
 
 		db.setLastActive(account._id, Date.now());
-		db.setLastPage(account._id, "search");
+		db.setLastPage(account._id, "global");
 
-		if(a && a.search){
-			let searchAtt = sys.userSearch(a.search);
-			if(searchAtt.ok){
-				guiObj.request.push("s");
-				guiObj.sResults = searchAtt.searchResults;
-			}else{
-				guiObj.request.push("nn");
-				guiObj.nnNotifications.push(["`dSearch returned no results`",3])
-			}
+		if(a && a.n){
+			n = a.n;
 		}else{
-			guiObj.request.push("ds")
+			n = 10;
 		}
 
-		return gui(guiObj)
+
 	}
-	return { ok:false, msg:"search" };
+	return { ok:false };
 }

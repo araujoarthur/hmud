@@ -8,6 +8,8 @@ function(context, args)
 
 	var g_sHeaderIdxCount = 0;
 
+	var g_gnList = 0;
+
 	function padNum(n,w=2){
   	return (n+'').padStart(w,0)
 	}
@@ -198,6 +200,26 @@ function(context, args)
 		]
 		return l.join("");
 	}
+	
+	function drawSearchInstructions(){
+		let text = "To search, provide search:\"user\" with full or parts of user."
+		let l = [
+			"`A  ╔"+"═".repeat(wid)+"╗`\n",
+			"`A  ║ "+text.padStart((wid+text.length)/2).padEnd(wid-1)+	"║`\n",
+			"`A  ╚"+"═".repeat(wid)+"╝`\n"
+		]
+		return l.join("");
+	}
+
+	function drawDetailInstructions(){
+		let text = "To view details, you must provide post:\"postID\"";
+		let l = [
+			"`A  ╔"+"═".repeat(wid)+"╗`\n",
+			"`A  ║ "+text.padStart((wid+text.length)/2).padEnd(wid-1)+"║`\n",
+			"`A  ╚"+"═".repeat(wid)+"╝`\n"
+		]
+		return l.join("");
+	}
 
 	function drawProfile(account){
 		let widProfileLeft = 61;
@@ -300,6 +322,40 @@ function(context, args)
 
 		return l.join("");
 
+	}
+	
+	function drawGenericList(lists){
+		let l = [
+			"`A  ╔"+"═".repeat(wid)+"╗`\n",
+			"`A  ║"+" ".repeat(wid)+"║`\n",
+		];
+		let list = lists[g_gnList];
+		let listSplit = [];
+		while(list.length) listSplit.push(list.splice(0,5));
+		var strList;
+
+		if(listSplit.length == 0){
+			strList =  "None";
+			l.push("`A  ║``L"+strList.padStart((wid+strList.length)/2).padEnd(wid)+"``A║`\n");
+		}
+		
+		for(let itemset of listSplit){
+			strList = "";
+			for(let item of itemset){
+				if(item == itemset[itemset.length-1]){
+					strList = strList + item;
+				}else{
+					strList = strList + item + ", ";
+				}
+			}
+			l.push("`A  ║"+strList.padStart((wid+strList.length)/2).padEnd(wid)+"║`\n");
+		}
+		
+		g_gnList += 1;
+
+		l.push("`A  ║"+" ".repeat(wid)+"║`\n");
+		l.push("`A  ╚"+"═".repeat(wid)+"╝`\n");
+		return l.join("");
 	}
 
 	function drawReceivedRequests(user){/* receives username */
@@ -418,6 +474,14 @@ function(context, args)
 		}
 		if(request == "sh"){
 			res.push(drawSubHeaders(a.shHeaders))
+		}
+		if(request == "di"){
+			res.push(drawDetailInstructions());
+		}
+		if(request == "gn"){
+			res.push(drawGenericList(a.gnLists));
+		}if(request == "ds"){
+			res.push(drawSearchInstructions());
 		}
 	}
 

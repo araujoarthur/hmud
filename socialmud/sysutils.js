@@ -1,11 +1,10 @@
 function(context, args)
 {
 	var caller = context.caller;
-	var l = #fs.scripts.lib();
 	var db = #fs.socialmud.dbutils();
-	var pages = ["com", "feed", "credits", "blog", "documentation", "post", "profile", "search", "register", "login", "logout","friends"];
+	var pages = ["com", "feed", "credits", "blog", "documentation", "post", "profile", "search", "register", "login", "logout","friends","verify","global"];
 	var restrictedPages = ["com","register","login","logout"];
-	var restrictedUsernames = ["register", "admin", "moderator", "public", "private", "shared", "friends", "feed","verified","main","profile"];
+	var restrictedUsernames = ["global","register", "admin", "moderator", "public", "private", "shared", "friends", "feed","verified","main","profile","none"];
 	const ac = "account_"
 
 	function removeIDTag(idtag){
@@ -15,11 +14,36 @@ function(context, args)
 			return {ok:false, msg:"It's not an ID"}
 		}
 	}
+
+	function parseDate(str) {
+        var res=str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if(!res)return {ok:false};
+        return +new Date(+res[3],res[1]-1,+res[2]);
+    }
+
 	function isLoggedIn(user){
 		if(db.getCallerAuthUser(user) != null){
 			return true;
 		}else{
 			return false;
+		}
+	}
+
+	function isID(str){
+		str = str.split("_")[0];
+		if (str == "account"){
+			return true
+		}else{
+			return false;
+		}
+	}
+
+	function userSearch(word){
+		let searchAtt = db.searchUser(word);
+		if (searchAtt.length > 0){
+			return {ok:true, searchResults:searchAtt};
+		}else{
+			return {ok:false, searchResults:null}
 		}
 	}
 
@@ -60,6 +84,7 @@ function(context, args)
 	}
 
 	function sendRequest(f,r){
+
 		let receiver = db.usernameToID(r);
 		let request = db.checkRequest(f,receiver);
 		let friendship = db.checkFriendship(f,receiver);
@@ -80,7 +105,7 @@ function(context, args)
 	}
 
 	function acceptRequest(f,r){
-		let sender = db.usernameToID(f);
+		let sender = isID(f) ? f : db.usernameToID(f);
 		let request = db.checkRequest(sender,r);
 		if(request.ok && request.to == r){
 			let friendship = db.createFriendship(sender,r);
@@ -137,6 +162,7 @@ function(context, args)
 					return {ok:false, msg:request.msg, mRelSum:request.mRelSum};
 				}else if(request.exists && !request.sent){
 					let acceptAttempt = acceptRequest(receiver,f)
+				
 					return {ok:true, msg:request.msg + " - " + acceptAttempt.msg, mRelSum:request.mRelSum + acceptAttempt.mRelSum};
 				}
 			}else{
@@ -229,7 +255,9 @@ function(context, args)
 			rejectRequest,
 			acceptRequest,
 			createPost,
-			removeIDTag
+			removeIDTag,
+			isID,
+			userSearch
 		}
 	}
 }

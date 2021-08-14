@@ -2,7 +2,6 @@ function(c, a)
 {	
 	
 		var caller = c.caller;
-		var l = #fs.scripts.lib();
 		var feedSel = "";
 		var sys = #fs.socialmud.sysutils();
 		var db = #fs.socialmud.dbutils();
@@ -35,10 +34,10 @@ function(c, a)
 				feedSelOwner = a.feed;
 			}
 
-			if(!a || !a.n || typeof(n) != "number"){
+			if(!a || !a.n || typeof(a.n) != "number"){
 				n = 10;
 			}else{
-				n = a.n;
+				n = a.n > 20 ? 20 : a.n;
 			}
 
 			if(a && (a.postAgree || a.postDisagree)){
@@ -98,20 +97,21 @@ function(c, a)
 				
 				
 			}
+
 			if(feedSelOwner == "main"){
 				guiObj.request.push(...["h","n","t","hp","p"]);
 				guiObj.hpTitle = "! Main Feed !";
 				guiObj.tUser = account.username;
 				guiObj.tReq = db.getReceivedRequestsCount(account._id);
 				guiObj.tFriends = db.getFriendCount(account._id);
-				guiObj.pPosts = db.getVisiblePosts(account._id, account.friends,  n);
+				guiObj.pPosts = a && a.startDate && a.endDate ? db.getVisiblePosts(account._id, account.friends, n, a.startDate, a.endDate): db.getVisiblePosts(account._id, account.friends,  n);
 			}else if(feedSelOwner == account.username){
 				guiObj.request.push(...["h","n","t","hp","p"]);
 				guiObj.hpTitle = "! Profile's Feed !";
 				guiObj.tUser = account.username;
 				guiObj.tReq = db.getReceivedRequestsCount(account._id);
 				guiObj.tFriends = db.getFriendCount(account._id);
-				guiObj.pPosts = db.getPostsOnFeed(db.usernameToID(feedSelOwner), n);
+				guiObj.pPosts = a && a.startDate && a.endDate ?  db.getPostsOnFeed(db.usernameToID(feedSelOwner), n, a.startDate, a.endDate) : db.getPostsOnFeed(db.usernameToID(feedSelOwner), n);
 			}else{
 				if(db.checkUsername(feedSelOwner)){
 					guiObj.request.push(...["h","n","t","hp","p"]);
@@ -119,7 +119,7 @@ function(c, a)
 					guiObj.tUser = account.username;
 					guiObj.tReq = db.getReceivedRequestsCount(account._id);
 					guiObj.tFriends = db.getFriendCount(account._id);
-					guiObj.pPosts = db.getPostsOnFeed(db.usernameToID(feedSelOwner), n);
+					guiObj.pPosts = a && a.startDate && a.endDate ? db.getPostsOnFeed(db.usernameToID(feedSelOwner), n, a.startDate, a.endDate) : db.getPostsOnFeed(db.usernameToID(feedSelOwner), n);
 				}else{
 					return gui({request:["h","em"], emMessage:"`AThis feed doesn't exist!`", emRelSum:3});
 				}

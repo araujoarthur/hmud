@@ -14,12 +14,17 @@ function(c, a)
 			}else{
 				a.username = a.username.trim();
 				a.password = a.password.trim();
-				if(!sys.restrictedUsernames.includes(a.username.toLowerCase())){
-					if(db.registerUser(a.username, a.password)){
-						return gui({request:["h","sm"], smMessage:"`AAccount Created! You can now login on socialmud.login{username:\"u\", password:\"p\"}`", smRelSum:3});
-					}else {
-						return gui({request:["h","em"], emMessage:"`AFailed to create account! Username``h already exists.`", emRelSum:6});
+				if(!sys.restrictedUsernames.includes(a.username.toLowerCase()) && !a.username.startsWith("account_")){
+					if(a.username.length > 15){
+						return gui({request:["h","em"], emMessage:"`DUsername is too long.`", emRelSum:3}); 
+					}else{
+						if(db.registerUser(a.username, a.password)){
+							return gui({request:["h","sm"], smMessage:"`AAccount Created! You can now login on socialmud.login{username:\"u\", password:\"p\"}`", smRelSum:3});
+						}else {
+							return gui({request:["h","em"], emMessage:"`AFailed to create account! Username``h already exists.`", emRelSum:6});
+						}
 					}
+					
 				}else{
 					return gui({request:["h","em"], emMessage:"`AYou used a restricted username!`", emRelSum:3});
 				}

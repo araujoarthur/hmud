@@ -28,8 +28,6 @@ function(c, a)
 			}
 
 			guiObj.tUser = account.username;
-			guiObj.tReq = db.getReceivedRequestsCount(account._id);
-			guiObj.tFriends = db.getFriendCount(account._id);
 
 			db.setLastActive(account._id, Date.now());
 			db.setLastPage(account._id, "friends");
@@ -68,9 +66,10 @@ function(c, a)
 				return error.stack;
 			}
 		
-			
+			guiObj.tReq = db.getReceivedRequestsCount(account._id);
+			guiObj.tFriends = db.getFriendCount(account._id);
 
-			guiObj.flFriends = account.friends.map(o=>db.idToUsername(o));
+			guiObj.flFriends = db.getAccount(db.getCallerAuthUser(caller)).friends.map(o=>db.idToUsername(o));
 			if(guiObj.flFriends.length > 0){
 				guiObj.request.push("fl");	
 			}else{
