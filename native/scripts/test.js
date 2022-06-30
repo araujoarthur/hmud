@@ -12,6 +12,7 @@ function(c, a)
 
 	if(!allowedUsers.includes(caller)) return gtfo
 	
-	return #ns.native.utils();
+	#var utils = ns.native.utils();
 	
+	return {isLOC:utils.isLOC("dataset.pii8thv")}
 }
